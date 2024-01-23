@@ -118,3 +118,12 @@ venv.bak/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# data
+
+ablation/
+final_dataset/
+log.txt
+nohup.out
+nusc_cam_front/
+test_dataset/

@@ -158,6 +158,7 @@ class SingleModel(BaseModel):
         # print(np.transpose(self.real_A.data[0].cpu().float().numpy(),(1,2,0))[:2][:2][:])
         if self.opt.skip == 1:
             self.fake_B, self.latent_real_A = self.netG_A.forward(self.real_A, self.real_A_gray)
+            assert not self.fake_B.isnan().any()
         else:
             self.fake_B = self.netG_A.forward(self.real_A, self.real_A_gray)
         # self.rec_A = self.netG_B.forward(self.fake_B)
@@ -242,6 +243,7 @@ class SingleModel(BaseModel):
             self.real_A = (self.real_A - torch.min(self.real_A))/(torch.max(self.real_A) - torch.min(self.real_A))
         if self.opt.skip == 1:
             self.fake_B, self.latent_real_A = self.netG_A.forward(self.real_img, self.real_A_gray)
+            assert not self.fake_B.isnan().any()
         else:
             self.fake_B = self.netG_A.forward(self.real_img, self.real_A_gray)
         if self.opt.patchD:
@@ -410,14 +412,14 @@ class SingleModel(BaseModel):
 
 
     def get_current_errors(self, epoch):
-        D_A = self.loss_D_A.data[0]
-        D_P = self.loss_D_P.data[0] if self.opt.patchD else 0
-        G_A = self.loss_G_A.data[0]
+        D_A = self.loss_D_A.item()
+        D_P = self.loss_D_P.item() if self.opt.patchD else 0
+        G_A = self.loss_G_A.item()
         if self.opt.vgg > 0:
-            vgg = self.loss_vgg_b.data[0]/self.opt.vgg if self.opt.vgg > 0 else 0
+            vgg = self.loss_vgg_b.item()/self.opt.vgg if self.opt.vgg > 0 else 0
             return OrderedDict([('D_A', D_A), ('G_A', G_A), ("vgg", vgg), ("D_P", D_P)])
         elif self.opt.fcn > 0:
-            fcn = self.loss_fcn_b.data[0]/self.opt.fcn if self.opt.fcn > 0 else 0
+            fcn = self.loss_fcn_b.item()/self.opt.fcn if self.opt.fcn > 0 else 0
             return OrderedDict([('D_A', D_A), ('G_A', G_A), ("fcn", fcn), ("D_P", D_P)])
         
 

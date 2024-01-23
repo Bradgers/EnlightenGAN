@@ -7,7 +7,7 @@ from util.visualizer import Visualizer
 def get_config(config):
     import yaml
     with open(config, 'r') as stream:
-        return yaml.load(stream)
+        return yaml.safe_load(stream)
 
 opt = TrainOptions().parse()
 config = get_config(opt.config)
@@ -49,7 +49,7 @@ for epoch in range(1, opt.niter + opt.niter_decay + 1):
         print('saving the model at the end of epoch %d, iters %d' %
               (epoch, total_steps))
         model.save('latest')
-        model.save(epoch)
+        model.save(80 + epoch)
 
     print('End of epoch %d / %d \t Time Taken: %d sec' %
           (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))

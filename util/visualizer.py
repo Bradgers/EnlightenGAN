@@ -129,8 +129,13 @@ class Visualizer():
         links = []
 
         for label, image_numpy in visuals.items():
-            image_name = '%s_%s.png' % (name, label)
+            # 4image_name = '%s_%s.png' % (name, label)
+            image_name = '%s_%s.jpg' % (name, label)
+            # save_path = os.path.join(image_dir, image_path[0].split('/')[2], image_name)
             save_path = os.path.join(image_dir, image_name)
+            if not os.path.exists(os.path.dirname(save_path)):
+                os.makedirs(os.path.dirname(save_path))
+            # import pdb; pdb.set_trace()
             util.save_image(image_numpy, save_path)
 
             ims.append(image_name)

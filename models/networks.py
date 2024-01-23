@@ -859,6 +859,7 @@ class Unet_resize_conv(nn.Module):
             conv9 = self.LReLU9_2(self.conv9_2(x))
 
             latent = self.conv10(conv9)
+            assert not latent.isnan().any()
             
             if self.opt.times_residual:
                 latent = latent*gray
@@ -880,6 +881,7 @@ class Unet_resize_conv(nn.Module):
                     elif self.opt.latent_norm:
                         latent = (latent - torch.min(latent))/(torch.max(latent)-torch.min(latent))
                     output = latent + input*self.opt.skip
+                    assert not output.isnan().any()
             else:
                 output = latent
 
@@ -887,10 +889,12 @@ class Unet_resize_conv(nn.Module):
                 output = output/torch.max(torch.abs(output))
         
         output = pad_tensor_back(output, pad_left, pad_right, pad_top, pad_bottom)
+        assert not output.isnan().any()
         latent = pad_tensor_back(latent, pad_left, pad_right, pad_top, pad_bottom)
         gray = pad_tensor_back(gray, pad_left, pad_right, pad_top, pad_bottom)
         if flag == 1:
             output = F.upsample(output, scale_factor=2, mode='bilinear')
+            assert not output.isnan().any()
             gray = F.upsample(gray, scale_factor=2, mode='bilinear')
         if self.skip:
             return output, latent
