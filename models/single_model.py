@@ -14,7 +14,12 @@ from .base_model import BaseModel
 import random
 from . import networks
 import sys
-
+from skimage.metrics import structural_similarity
+from skimage.metrics import peak_signal_noise_ratio
+from skimage import img_as_float
+from scipy.ndimage import filters
+from scipy.special import gammaln
+from scipy.stats import genpareto
 
 class SingleModel(BaseModel):
     def name(self):
@@ -496,3 +501,62 @@ class SingleModel(BaseModel):
 
         print('update learning rate: %f -> %f' % (self.old_lr, lr))
         self.old_lr = lr
+
+    
+    def calculate_niqe(self, image):
+        image = img_as_float(image)
+        h, w = image.shape[:2]
+        block_size = 96
+        strides = 32
+        features = []
+    
+        for i in range(0, h - block_size + 1, strides):
+            for j in range(0, w - block_size + 1, strides):
+                block = image[i:i + block_size, j:j + block_size]
+                mu = np.mean(block)
+                sigma = np.std(block)
+                filtered_block = filters.gaussian_filter(block, sigma)
+                shape, _, scale = genpareto.fit(filtered_block.ravel(), floc=0)
+                feature = [mu, sigma, shape, scale, gammaln(1 / shape)]
+                features.append(feature)
+    
+        features = np.array(features)
+        model_mean = np.zeros(features.shape[1])
+        model_cov_inv = np.eye(features.shape[1])
+        quality_scores = []
+    
+        for feature in features:
+            score = (feature - model_mean) @ model_cov_inv @ (feature - model_mean).T
+            quality_scores.append(score)
+    
+        return np.mean(quality_scores)
+    
+    def single_tensor2im(self, image_tensor, imtype=np.uint8):
+        image_numpy = image_tensor.squeeze().cpu().float().numpy()
+        image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0 * 255.0 # (800, 800, 3)
+        image_numpy = np.maximum(image_numpy, 0)
+        image_numpy = np.minimum(image_numpy, 255)
+        return image_numpy.astype(imtype)
+    
+    def batch_tensor2im(self, image_tensor, imtype=np.uint8):
+        image_numpy = image_tensor.cpu().float().numpy() # (B, 3, 800, 800)
+        image_numpy = (np.transpose(image_numpy, (0, 2, 3, 1)) + 1) / 2.0 * 255.0 # (B, 800, 800, 3)
+        image_numpy = np.maximum(image_numpy, 0)
+        image_numpy = np.minimum(image_numpy, 255)
+        return image_numpy.astype(imtype)
+    
+    def evaluate(self):
+        # import pdb; pdb.set_trace()
+        bs = self.real_A.data.shape[0] # (B, 3, 800, 800)
+        ssim, psnr = 0, 0
+        for i in range(bs):
+            real_A = self.single_tensor2im(self.real_A.data[i])
+            fake_B = self.single_tensor2im(self.fake_B.data[i])
+            ssim += structural_similarity(real_A, fake_B, channel_axis=2)
+            psnr += peak_signal_noise_ratio(real_A, fake_B)
+            # niqe += self.calculate_niqe(real_A)
+        # real_A = self.batch_tensor2im(self.real_A.data)
+        # fake_B = self.batch_tensor2im(self.fake_B.data)
+        # ssim += structural_similarity(real_A, fake_B, multichannel=True)
+        # psnr += peak_signal_noise_ratio(real_A, fake_B)
+        return OrderedDict([("ssim", ssim), ("psnr", psnr)])

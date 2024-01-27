@@ -3,6 +3,7 @@ from options.train_options import TrainOptions
 from data.data_loader import CreateDataLoader
 from models.models import create_model
 from util.visualizer import Visualizer
+import os
 
 def get_config(config):
     import yaml
@@ -20,8 +21,10 @@ model = create_model(opt)
 visualizer = Visualizer(opt)
 
 total_steps = 0
+metric_name = os.path.join(opt.checkpoints_dir, opt.name, 'metric.txt')
 
 for epoch in range(1, opt.niter + opt.niter_decay + 1):
+    ssim, psnr = 0, 0
     epoch_start_time = time.time()
     for i, data in enumerate(dataset):
         iter_start_time = time.time()
@@ -29,7 +32,11 @@ for epoch in range(1, opt.niter + opt.niter_decay + 1):
         epoch_iter = total_steps - dataset_size * (epoch - 1)
         model.set_input(data)
         model.optimize_parameters(epoch)
-
+        metrics = model.evaluate()
+        ssim += metrics["ssim"]
+        psnr += metrics["psnr"]
+        # print('epoch %d: ssim: %f psnr: %f' %(epoch, ssim, psnr))
+        # print(ssim, psnr)
         if total_steps % opt.display_freq == 0:
             visualizer.display_current_results(model.get_current_visuals(), epoch)
 
@@ -49,10 +56,17 @@ for epoch in range(1, opt.niter + opt.niter_decay + 1):
         print('saving the model at the end of epoch %d, iters %d' %
               (epoch, total_steps))
         model.save('latest')
-        model.save(80 + epoch)
+        model.save(epoch)
 
     print('End of epoch %d / %d \t Time Taken: %d sec' %
           (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
+    
+    mean_ssim = ssim / dataset_size
+    mean_psnr = psnr / dataset_size
+    # mean_niqe = niqe / dataset_size
+    print('epoch %d: ssim: %f psnr: %f' %(epoch, mean_ssim, mean_psnr))
+    with open(metric_name, "a") as metric_file:
+        metric_file.write('epoch %d: ssim: %f psnr: %f \n' %(epoch, mean_ssim, mean_psnr))
 
     if opt.new_lr:
         if epoch == opt.niter:

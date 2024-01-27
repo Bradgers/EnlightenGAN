@@ -127,3 +127,4 @@ log.txt
 nohup.out
 nusc_cam_front/
 test_dataset/
+train_dataset/
