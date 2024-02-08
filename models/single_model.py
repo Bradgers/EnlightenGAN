@@ -20,6 +20,9 @@ from skimage import img_as_float
 from scipy.ndimage import filters
 from scipy.special import gammaln
 from scipy.stats import genpareto
+import pyiqa
+niqe_metric = pyiqa.create_metric("niqe").cuda()
+psnr_metric = pyiqa.create_metric("psnr", data_range=255).cuda()
 
 class SingleModel(BaseModel):
     def name(self):
@@ -533,30 +536,46 @@ class SingleModel(BaseModel):
     
     def single_tensor2im(self, image_tensor, imtype=np.uint8):
         image_numpy = image_tensor.squeeze().cpu().float().numpy()
-        image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0 * 255.0 # (800, 800, 3)
+        image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0 * 255.0 # (800, 800, 3)'
         image_numpy = np.maximum(image_numpy, 0)
         image_numpy = np.minimum(image_numpy, 255)
         return image_numpy.astype(imtype)
     
     def batch_tensor2im(self, image_tensor, imtype=np.uint8):
         image_numpy = image_tensor.cpu().float().numpy() # (B, 3, 800, 800)
+        # image_tensor_eval = image_tensor.detach()
+        # image_tensor_eval = (image_tensor_eval.permute(0, 2, 3, 1) + 1) / 2.0 * 255.0 # (B, 800, 800, 3)
+        # zeros = torch.zeros_like(image_tensor_eval)
+        # one = torch.ones_like(a)
+        # image_tensor_eval = torch.maximum(image_tensor_eval, 0)
+        # image_tensor_eval = np.minimum(image_tensor_eval, 255)
+        # image_tensor_eval = image_tensor_eval.astype(imtype)
+        # image_tensor_eval = image_tensor_eval.permute(0, 3, 1, 2)  # (B, 3, 800, 800)
+        image_numpy = image_tensor.cpu().float().numpy() # (B, 3, 800, 800)
         image_numpy = (np.transpose(image_numpy, (0, 2, 3, 1)) + 1) / 2.0 * 255.0 # (B, 800, 800, 3)
         image_numpy = np.maximum(image_numpy, 0)
         image_numpy = np.minimum(image_numpy, 255)
-        return image_numpy.astype(imtype)
+        image_numpy = image_numpy.astype(imtype)
+        image_numpy = np.transpose(image_numpy, (0, 3, 1, 2)) # (B, 3, 800, 800)
+        image_tensor_eval = torch.Tensor(image_numpy)
+        return image_tensor_eval
     
     def evaluate(self):
         # import pdb; pdb.set_trace()
-        bs = self.real_A.data.shape[0] # (B, 3, 800, 800)
-        ssim, psnr = 0, 0
-        for i in range(bs):
-            real_A = self.single_tensor2im(self.real_A.data[i])
-            fake_B = self.single_tensor2im(self.fake_B.data[i])
-            ssim += structural_similarity(real_A, fake_B, channel_axis=2)
-            psnr += peak_signal_noise_ratio(real_A, fake_B)
+        # bs = self.real_A.data.shape[0] # (B, 3, 800, 800)
+        # ssim, psnr, niqe = 0, 0, 0
+        # for i in range(bs):
+        #     real_A = self.single_tensor2im(self.real_A.data[i])
+        #     fake_B = self.single_tensor2im(self.fake_B.data[i])
+        #     ssim += structural_similarity(real_A, fake_B, channel_axis=2)
+        #     psnr += peak_signal_noise_ratio(real_A, fake_B)
+            # import pdb; pdb.set_trace()
             # niqe += self.calculate_niqe(real_A)
-        # real_A = self.batch_tensor2im(self.real_A.data)
-        # fake_B = self.batch_tensor2im(self.fake_B.data)
+        real_A = self.batch_tensor2im(self.real_A.data)
+        fake_B = self.batch_tensor2im(self.fake_B.data)
+        psnr = psnr_metric(real_A, fake_B).sum().item()
+        niqe = niqe_metric(real_A).sum().item()
         # ssim += structural_similarity(real_A, fake_B, multichannel=True)
         # psnr += peak_signal_noise_ratio(real_A, fake_B)
-        return OrderedDict([("ssim", ssim), ("psnr", psnr)])
+        # return OrderedDict([("ssim", ssim), ("psnr", psnr)])
+        return OrderedDict([("psnr", psnr), ("niqe", niqe)])

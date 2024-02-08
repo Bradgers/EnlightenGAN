@@ -36,8 +36,7 @@ if opt.train:
 		--instance_norm 0 \
 		--vgg 1 \
         --vgg_choose relu5_1 \
-		--gpu_ids 1,2 \
-		--continue_train \
+		--gpu_ids 0,2 \
 		--display_port=" + opt.port)
 
 elif opt.predict:
@@ -57,5 +56,5 @@ elif opt.predict:
                 --times_residual \
 	        	--instance_norm 0 --resize_or_crop='no'\
 				--gpu_ids 0 \
-	        	--which_epoch " + "5")
+	        	--which_epoch " + "43")
 # --which_epoch " + str(200 - i*5))

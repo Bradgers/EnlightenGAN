@@ -24,7 +24,8 @@ total_steps = 0
 metric_name = os.path.join(opt.checkpoints_dir, opt.name, 'metric.txt')
 
 for epoch in range(1, opt.niter + opt.niter_decay + 1):
-    ssim, psnr = 0, 0
+    # ssim, psnr = 0, 0
+    psnr, niqe = 0, 0
     epoch_start_time = time.time()
     for i, data in enumerate(dataset):
         iter_start_time = time.time()
@@ -33,8 +34,8 @@ for epoch in range(1, opt.niter + opt.niter_decay + 1):
         model.set_input(data)
         model.optimize_parameters(epoch)
         metrics = model.evaluate()
-        ssim += metrics["ssim"]
         psnr += metrics["psnr"]
+        niqe += metrics["niqe"]
         # print('epoch %d: ssim: %f psnr: %f' %(epoch, ssim, psnr))
         # print(ssim, psnr)
         if total_steps % opt.display_freq == 0:
@@ -61,12 +62,12 @@ for epoch in range(1, opt.niter + opt.niter_decay + 1):
     print('End of epoch %d / %d \t Time Taken: %d sec' %
           (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
     
-    mean_ssim = ssim / dataset_size
+    # mean_ssim = ssim / dataset_size
     mean_psnr = psnr / dataset_size
-    # mean_niqe = niqe / dataset_size
-    print('epoch %d: ssim: %f psnr: %f' %(epoch, mean_ssim, mean_psnr))
+    mean_niqe = niqe / dataset_size
+    print('epoch %d: psnr: %f niqe: %f' %(epoch, mean_psnr, mean_niqe))
     with open(metric_name, "a") as metric_file:
-        metric_file.write('epoch %d: ssim: %f psnr: %f \n' %(epoch, mean_ssim, mean_psnr))
+        metric_file.write('epoch %d: psnr: %f niqe: %f \n' %(epoch, mean_psnr, mean_niqe))
 
     if opt.new_lr:
         if epoch == opt.niter:
