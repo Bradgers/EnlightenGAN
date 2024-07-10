@@ -7,6 +7,7 @@ parser.add_argument("--train", action='store_true')
 parser.add_argument("--predict", action='store_true')
 parser.add_argument("--name", type=str, default="enlightening")
 parser.add_argument("--dataset", type=str, default="final_dataset")
+parser.add_argument("--metric", action="store_true")
 opt = parser.parse_args()
 
 if opt.train:
@@ -40,21 +41,37 @@ if opt.train:
 		--display_port=" + opt.port)
 
 elif opt.predict:
-	for i in range(1):
-	        os.system(f"python predict.py \
-	        	--dataroot {opt.dataset} \
-	        	--name {opt.name} \
-	        	--model single \
-	        	--which_direction AtoB \
-	        	--no_dropout \
-	        	--dataset_mode unaligned \
-	        	--which_model_netG sid_unet_resize \
-	        	--skip 1 \
-	        	--use_norm 1 \
-	        	--use_wgan 0 \
-                --self_attention \
-                --times_residual \
-	        	--instance_norm 0 --resize_or_crop='no'\
+        for i in range(1):
+            os.system(f"python predict.py \
+				--dataroot {opt.dataset} \
+				--name {opt.name} \
+				--model single \
+				--which_direction AtoB \
+				--no_dropout \
+				--dataset_mode unaligned \
+				--which_model_netG sid_unet_resize \
+				--skip 1 \
+				--use_norm 1 \
+				--use_wgan 0 \
+				--self_attention \
+				--times_residual \
+				--instance_norm 0 --resize_or_crop='no'\
 				--gpu_ids 0 \
-	        	--which_epoch " + "43")
-# --which_epoch " + str(200 - i*5))
+				--which_epoch " + "25")
+elif opt.metric:
+        os.system(f"python metric.py \
+				--dataroot {opt.dataset} \
+				--name {opt.name} \
+				--model single \
+				--which_direction AtoB \
+				--no_dropout \
+				--dataset_mode unaligned \
+				--which_model_netG sid_unet_resize \
+				--skip 1 \
+				--use_norm 1 \
+				--use_wgan 0 \
+				--self_attention \
+				--times_residual \
+				--instance_norm 0 --resize_or_crop='no'\
+				--gpu_ids 0 \
+				--which_epoch " + "54")    

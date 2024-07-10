@@ -536,7 +536,7 @@ class SingleModel(BaseModel):
     
     def single_tensor2im(self, image_tensor, imtype=np.uint8):
         image_numpy = image_tensor.squeeze().cpu().float().numpy()
-        image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0 * 255.0 # (800, 800, 3)'
+        image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0 * 255.0 # (800, 800, 3)
         image_numpy = np.maximum(image_numpy, 0)
         image_numpy = np.minimum(image_numpy, 255)
         return image_numpy.astype(imtype)
@@ -571,10 +571,10 @@ class SingleModel(BaseModel):
         #     psnr += peak_signal_noise_ratio(real_A, fake_B)
             # import pdb; pdb.set_trace()
             # niqe += self.calculate_niqe(real_A)
-        real_A = self.batch_tensor2im(self.real_A.data)
-        fake_B = self.batch_tensor2im(self.fake_B.data)
+        real_A = self.batch_tensor2im(self.real_A.data) # 真实图像
+        fake_B = self.batch_tensor2im(self.fake_B.data) # 生成图像
         psnr = psnr_metric(real_A, fake_B).sum().item()
-        niqe = niqe_metric(real_A).sum().item()
+        niqe = niqe_metric(fake_B).sum().item()
         # ssim += structural_similarity(real_A, fake_B, multichannel=True)
         # psnr += peak_signal_noise_ratio(real_A, fake_B)
         # return OrderedDict([("ssim", ssim), ("psnr", psnr)])

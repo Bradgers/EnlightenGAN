@@ -33,9 +33,9 @@ for epoch in range(1, opt.niter + opt.niter_decay + 1):
         epoch_iter = total_steps - dataset_size * (epoch - 1)
         model.set_input(data)
         model.optimize_parameters(epoch)
-        metrics = model.evaluate()
-        psnr += metrics["psnr"]
-        niqe += metrics["niqe"]
+        # metrics = model.evaluate()
+        # psnr += metrics["psnr"]
+        # niqe += metrics["niqe"]
         # print('epoch %d: ssim: %f psnr: %f' %(epoch, ssim, psnr))
         # print(ssim, psnr)
         if total_steps % opt.display_freq == 0:
@@ -62,12 +62,12 @@ for epoch in range(1, opt.niter + opt.niter_decay + 1):
     print('End of epoch %d / %d \t Time Taken: %d sec' %
           (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
     
-    # mean_ssim = ssim / dataset_size
-    mean_psnr = psnr / dataset_size
-    mean_niqe = niqe / dataset_size
-    print('epoch %d: psnr: %f niqe: %f' %(epoch, mean_psnr, mean_niqe))
-    with open(metric_name, "a") as metric_file:
-        metric_file.write('epoch %d: psnr: %f niqe: %f \n' %(epoch, mean_psnr, mean_niqe))
+    # # mean_ssim = ssim / dataset_size
+    # mean_psnr = psnr / dataset_size
+    # mean_niqe = niqe / dataset_size
+    # print('epoch %d: psnr: %f niqe: %f' %(epoch, mean_psnr, mean_niqe))
+    # with open(metric_name, "a") as metric_file:
+    #     metric_file.write('epoch %d: psnr: %f niqe: %f \n' %(epoch, mean_psnr, mean_niqe))
 
     if opt.new_lr:
         if epoch == opt.niter:
